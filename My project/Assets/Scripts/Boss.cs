@@ -4,8 +4,9 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
-public class Enemy : MonoBehaviour
+public class Boss : MonoBehaviour
 {
     //public GameEvent collisionEvent;
     public float HP = 1200;
@@ -18,14 +19,18 @@ public class Enemy : MonoBehaviour
     public UnityEngine.AI.NavMeshAgent enemyAgent;
     public Vector2 patrolRange;
     private Vector3 randomPosition;
-    public float patrolTime, blastForce;
+    public float patrolTime;
     private EnemyState currentState;
-    public bool flying = false;
-    public GameObject blast;
-    private float attackCD;
+    private float attackCD1 = 0f, timeTillDmg = 0f;
     private Animator enemyAnimator;
-    private bool alive = true;
+    private bool alive = true, playerSeen = false;
+    private float dmg = 100;
+    private AnimatorStateInfo animatorState;
+    public Collider sword;
     private Vector3 targetPosition;
+    public GameEvent win;
+    private float timeForExit = 0;
+
     // Start is called before the first frame update
 
     public void Start()
@@ -37,11 +42,12 @@ public class Enemy : MonoBehaviour
         currentState = EnemyState.PATROL;
         UpdateState();
         enemyAnimator = GetComponent<Animator>();
+        sword.enabled = false;
     }
 
     public void OnTriggerEnter(Collider collision)
     {
-        if (collision.transform.CompareTag("Damager") && canBeHurt < Time.time)
+        if (collision.transform.CompareTag("Damager") && canBeHurt < Time.time && currentHp > 0)
         {
             damageReceived = collision.gameObject.GetComponent<Weapon>().PassDamage();
             currentHp = currentHp - damageReceived;
@@ -54,7 +60,7 @@ public class Enemy : MonoBehaviour
 
     public void OnTriggerStay(Collider collision)
     {
-        if (collision.transform.CompareTag("DamagerBeam") && canBeHurt < Time.time)
+        if (collision.transform.CompareTag("DamagerBeam") && canBeHurt < Time.time && currentHp > 0)
         {
             damageReceived = collision.gameObject.GetComponent<LaserDmg>().PassDamage();
             currentHp = currentHp - damageReceived;
@@ -72,26 +78,31 @@ public class Enemy : MonoBehaviour
             alive = false;
             FindObjectOfType<DetectEnemies>().DestroyEnemyInList(gameObject);
             FindObjectOfType<WorldManager>().DestroyEnemy(gameObject);
-            enemyAnimator.SetBool("Alive", false);
-            Destroy(gameObject, 15.0f);
+            enemyAgent.velocity = Vector3.zero;
+            enemyAnimator.SetBool("alive", false);
+            enemyAgent.Stop();
+            timeForExit = Time.time + 3f;
         }
     }
 
     public void Update()
     {
         Death();
+        if (timeForExit < Time.time && !alive)
+        {
+            win.Raise();
+        }
         setHp.SetHealth(currentHp);
+        animatorState = enemyAnimator.GetCurrentAnimatorStateInfo(0);
         if (alive)
         {
+            if (animatorState.IsName("PrepareForCombat") || animatorState.IsName("attack2") || animatorState.IsName("death"))
+                enemyAgent.velocity = Vector3.zero;
             ChasePlayer();
             switch (currentState)
             {
                 case EnemyState.CHASE:
-                    targetPosition = new Vector3(playerTransform.position.x,
-                                                                 gameObject.transform.position.y,
-                                                                 playerTransform.position.z);
-                    gameObject.transform.LookAt(targetPosition);
-                    enemyAgent.SetDestination(targetPosition);
+                    enemyAgent.SetDestination(playerTransform.position);
 
                     break;
                 case EnemyState.PATROL:
@@ -139,21 +150,28 @@ public class Enemy : MonoBehaviour
         if (distance > 40)
         {
             currentState = EnemyState.PATROL;
-        }else
-            {
-                if (distance <= 2.5 && !flying)
+        }
+        else
+        {
+            if (distance <= 2.5)
                 currentState = EnemyState.ATTACK;
-                else
+            else
+            {
+                if (!playerSeen)
                 {
-                    if(distance <= 25 && flying)
-                {
-                    currentState = EnemyState.ATTACK;
+                    enemyAnimator.SetTrigger("lookAtPlayer");
+                    playerSeen = true;
                 }
-                    else
-                    currentState = EnemyState.CHASE;
-                }
+                currentState = EnemyState.CHASE;
             }
+        }
         //UnityEngine.Debug.Log(currentState);
+        if (animatorState.IsName("attack1") && timeTillDmg < Time.time || animatorState.IsName("attack2") && timeTillDmg < Time.time)
+        {
+            sword.enabled = true;
+        }
+        else
+            sword.enabled = false;
     }
 
 
@@ -166,16 +184,23 @@ public class Enemy : MonoBehaviour
 
     public void Attack()
     {
-        if(flying == true && Time.time > attackCD)
+        if (attackCD1 < Time.time)
         {
-            GameObject currentBlast = Instantiate(blast, gameObject.transform.position, Quaternion.identity);
-            Vector3 blastDirection = playerTransform.position - gameObject.transform.position;
-            blastDirection.y = playerTransform.position.y;
-            currentBlast.GetComponent<Rigidbody>().AddForce(blastDirection * blastForce, ForceMode.Impulse);
-            UnityEngine.Debug.Log("blast direction" + blastDirection);
-            attackCD = Time.time + 3.0f;
+            enemyAnimator.SetTrigger("attack1");
+            attackCD1 = Time.time + 10f;
+            dmg = 350;
         }
-        enemyAnimator.SetTrigger("Attack");
+        else
+        {
+            enemyAnimator.SetTrigger("attack2");
+            dmg = 200;
+        }
+      
+    }
+
+    public float AttackDmg()
+    {
+        return dmg;
     }
 
     private void OnAnimatorMove()

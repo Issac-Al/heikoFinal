@@ -11,13 +11,13 @@ public class ChangeWorlds : MonoBehaviour
     {
         normalWorld.SetActive(true);
         spiritualWorld.SetActive(false);
-        DirectionalLight.colorTemperature = 4348;
+        //FindObjectOfType<WorldManager>().UpdateEnemies();
     }
 
     public void SpiritualWorld()
     {
         normalWorld.SetActive(false);
         spiritualWorld.SetActive(true);
-        DirectionalLight.colorTemperature = 16511;
+        //FindObjectOfType<WorldManager>().UpdateEnemies();
     }
 }

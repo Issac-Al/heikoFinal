@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Weapon : MonoBehaviour
+public class EnemyBullet : MonoBehaviour
 {
     //public GameObject StaffBack, StaffHand;
     public GameEvent collisionEvent;
@@ -27,7 +27,7 @@ public class Weapon : MonoBehaviour
 
     private void OnTriggerEnter(Collider collision)
     {
-        if(collision.transform.CompareTag("Enemy"))
+        if (collision.transform.CompareTag("Player"))
         {
             if (timer > 0.6f)
             {
@@ -36,10 +36,10 @@ public class Weapon : MonoBehaviour
                 if (throwable)
                     Destroy(gameObject);
             }
-        }   
+        }
         //UnityEngine.Debug.Log("Entro al trigger");
     }
-    
+
     public float PassDamage()
     {
         return dmg;

@@ -6,12 +6,34 @@ using static System.Net.Mime.MediaTypeNames;
 public class GameManager : MonoBehaviour
 {
     public GameState currentState;
-    public GameEvent OnStartEvent;
+    public GameEvent OnStartEvent, continueEvent, pauseEvent;
+    public GameObject playerStats, pauseMenu;
+    private bool paused = false;
     void Start()
     {
         currentState = GameState.ON_START;
         EvaluateState();
     }
+
+    void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            if (paused)
+            {
+                continueEvent.Raise();
+                ContinueGame();
+                paused = false;
+            }
+            else
+            {
+                pauseEvent.Raise();
+                PauseGame();
+                paused = true;
+            }
+        }
+    }
+
     public void EvaluateState()
     {
         switch (currentState)
@@ -26,12 +48,16 @@ public class GameManager : MonoBehaviour
     {
         currentState = GameState.PAUSE;
         Time.timeScale = 0;
+        playerStats.SetActive(false);
+        pauseMenu.SetActive(true);
         EvaluateState();
     }
     public void ContinueGame()
     {
         currentState = GameState.PLAYING;
         Time.timeScale = 1;
+        playerStats.SetActive(true);
+        pauseMenu.SetActive(false);
         EvaluateState();
     }
     public void ExitGame()

@@ -18,24 +18,26 @@ public class Ayako : MonoBehaviour
     public float speed, jumpHeight;
     private float rotationPerFrame = 15f;
     public Camera MainCamera;
-    bool seMueve, grounded, jumping = false;
+    bool seMueve, grounded;
     private Transform playerTransform;
     private float gravity = -9.81f, ySpeed;
     public int HP = 1250, MP = 500, currentHP, currentMP, regenerationSpeedHP, regenerationSpeedMP;
-    public GameObject StaffBack, StaffHand, mask, blast, forceField, speedParticles, lightBeam, sparkles, detectionZone;
+    public GameObject StaffBack, StaffHand, mask, blast, forceField, speedParticles, lightBeam, sparkles, detectionZone, UI, GameOver;
     public PlayerHp HPSet;
     public PlayerMp MPSet;
     public float nextAttackTime = 0f, blastForce = 10f;
     private float spell1CD = 0f, spell2CD = 0f, spell3CD = 0f, spell4CD = 0f, maskCD = 0f;
     public GameEvent spell1, spell2, spell3, spell4, world1Event, world2Event;
-    private bool maskOn, forceFieldOn, speedBoost;
+    private bool maskOn, forceFieldOn, speedBoost, attacking = false;
     public Transform rightHandPos;
-    private float shieldDuration = 10f, boostTime;
+    private float shieldDuration = 10f, boostTime, canBeHurt = 0f;
     public List<GameObject> enemiesNear;
     bool isTalking = false;
     private int CountAttackClick = 0, spellType = 0;
     private Transform closerEnemy;
     private Vector3 playerJump;
+    public Animator maskAnimator, worldAnimator;
+
     void Start()
     {        
         playerAnimator = GetComponent<Animator>();
@@ -56,7 +58,11 @@ public class Ayako : MonoBehaviour
         MPSet.SetMp(currentMP);
         grounded = playerController.isGrounded;
         if (currentHP <= 0 && playerAnimator.GetBool("Alive") == true)
+        {
             playerAnimator.SetBool("Alive", false);
+            UI.SetActive(false);
+            GameOver.SetActive(true);
+        }
         else
         {
             if (!isTalking)
@@ -100,10 +106,11 @@ public class Ayako : MonoBehaviour
                     playerJump.y = 0f;
                 }
 
-                if(playerJump.y < -6)
+                if (playerJump.y < -6)
                 {
-                   playerAnimator.SetBool("grounded", true);
+                    playerAnimator.SetBool("grounded", true);
                 }
+
 
                 Vector3 forwardRelativeVerticalInput = vertical * forward;
                 Vector3 rightRelativeHorizontalInput = horizontal * right;
@@ -118,22 +125,21 @@ public class Ayako : MonoBehaviour
 
                 float inputMagnitude = Mathf.Clamp01(direction.magnitude);
 
-           
+
                 if (Input.GetKeyDown(KeyCode.Space) && grounded)
                 {
                     playerAnimator.SetTrigger("Jump");
                     playerAnimator.SetBool("grounded", false);
                     playerJump.y += Mathf.Sqrt(jumpHeight * -3.0f * gravity);
-                    jumping = true;
                 }
 
                 playerJump.y += gravity * Time.deltaTime;
-                UnityEngine.Debug.Log(grounded);
+                //UnityEngine.Debug.Log(grounded);
                 playerController.Move(playerJump * Time.deltaTime);
 
-                if (animatorState.IsName("attack1") || animatorState.IsName("second") || animatorState.IsName("third") || animatorState.IsName("Spell1") || animatorState.IsName("Spell2") || animatorState.IsName("Spell3") || animatorState.IsName("Spell4") || animatorState.IsName("land"))
+                if (animatorState.IsName("attack1") || animatorState.IsName("second") || animatorState.IsName("third") || animatorState.IsName("Spell1") || animatorState.IsName("Spell2") || animatorState.IsName("Spell3") || animatorState.IsName("Spell4") || animatorState.IsName("land") || animatorState.IsName("mask") || animatorState.IsName("Death"))
                 {
-                    UnityEngine.Debug.Log("Se llama ataque1?" + animatorState.IsName("attack1"));
+                    //UnityEngine.Debug.Log("Se llama ataque1?" + animatorState.IsName("attack1"));
                     velocity = new Vector3(0, 0, 0);
                     playerController.Move(velocity * Time.deltaTime);
                     playerAnimator.SetFloat("Speed", inputMagnitude);
@@ -141,43 +147,57 @@ public class Ayako : MonoBehaviour
                 }
                 else
                 {
-                    playerController.Move(velocity * Time.deltaTime);
-                    playerAnimator.SetFloat("Speed", inputMagnitude);
+                    if (seMueve)
+                    {
+                        playerController.Move(velocity * Time.deltaTime);
+                        playerAnimator.SetFloat("Speed", inputMagnitude);
+                    }
+                    else
+                    {
+                        playerController.Move(Vector3.zero);
+                        playerAnimator.SetFloat("Speed", 0);
+                    }
                 }
                 //UnityEngine.Debug.Log(animatorState);
                 //UnityEngine.Debug.Log(direction);
                 //UnityEngine.Debug.Log(direction);
 
-                if (inputMagnitude > 0)
-                {
-                    seMueve = true;
-                }
-                else seMueve = false;
-
                 //UnityEngine.Debug.Log(ControlPlayerInput);
 
-                if (Input.GetKeyDown(KeyCode.Mouse0) && Time.time >= nextAttackTime)
+                if (Input.GetKeyDown(KeyCode.Mouse0))
                 {
                     CountAttackClick++;
-                    UnityEngine.Debug.Log(CountAttackClick);
+                    //UnityEngine.Debug.Log(CountAttackClick);
                     StaffHand.GetComponent<Collider>().enabled = true;
                     StaffBack.SetActive(false);
                     StaffHand.SetActive(true);
+                    attacking = true;
+                    //playerController.Move(Vector3.zero);
                     if (enemiesNear.Count > 0)
                     {
                         GetCloserEnemy();
-                        playerTransform.LookAt(closerEnemy.position);
+                        Vector3 targetPosition = new Vector3(closerEnemy.position.x,
+                                                             playerTransform.position.y,
+                                                             closerEnemy.position.z);
+                        playerTransform.LookAt(targetPosition);
+                        //playerTransform.position.y = 0;
                     }
                     if (CountAttackClick == 1)
                     {
                         playerAnimator.SetInteger("AttackPhase", 1);
                     }
-                    if(CountAttackClick >= 24)
+                    if (CountAttackClick >= 24)
                     {
                         ResetAttackPhase();
                     }
-                
+
                 }
+
+                if (inputMagnitude > 0 && !attacking)
+                {
+                    seMueve = true;
+                }
+                else seMueve = false;
 
 
                 //if (Input.GetKeyDown(KeyCode.Mouse1))
@@ -194,7 +214,10 @@ public class Ayako : MonoBehaviour
                         StaffHand.SetActive(true);
                         sparkles.SetActive(true);
                         GetCloserEnemy();
-                        playerTransform.LookAt(closerEnemy.position);
+                        Vector3 targetPosition = new Vector3(closerEnemy.position.x,
+                                                             playerTransform.position.y,
+                                                             closerEnemy.position.z);
+                        playerTransform.LookAt(targetPosition);
                         playerAnimator.SetTrigger("spell3");
                         spellType = 1;
                     }
@@ -209,7 +232,7 @@ public class Ayako : MonoBehaviour
                         StaffHand.SetActive(true);
                         sparkles.SetActive(true);
                         playerAnimator.SetTrigger("spell4");
-                        spellType=2;
+                        spellType = 2;
                     }
                 }
 
@@ -222,7 +245,10 @@ public class Ayako : MonoBehaviour
                         StaffHand.SetActive(true);
                         sparkles.SetActive(true);
                         GetCloserEnemy();
-                        playerTransform.LookAt(closerEnemy.position);
+                        Vector3 targetPosition = new Vector3(closerEnemy.position.x,
+                                                             playerTransform.position.y,
+                                                             closerEnemy.position.z);
+                        playerTransform.LookAt(targetPosition);
                         playerAnimator.SetTrigger("spell1");
                         spellType = 3;
                     }
@@ -241,9 +267,9 @@ public class Ayako : MonoBehaviour
                     }
                 }
 
-                if (Input.GetKeyDown(KeyCode.LeftShift))
+                if (Input.GetKeyDown(KeyCode.LeftShift) && Time.time >= maskCD)
                 {
-                    playerAnimator.SetTrigger("mask");
+                    PutMask();
                 }
             }
         }
@@ -347,6 +373,7 @@ public class Ayako : MonoBehaviour
         playerAnimator.SetInteger("AttackPhase", 0);
         StaffHand.SetActive(false);
         StaffBack.SetActive(true);
+        attacking = false;
     }
 
     public void SpellType()
@@ -358,9 +385,9 @@ public class Ayako : MonoBehaviour
             spell1CD = Time.time + 6.26f;
             GameObject currentBlast = Instantiate(blast, rightHandPos.position, Quaternion.identity);
             Vector3 blastDirection = closerEnemy.position - rightHandPos.position;
-            blastDirection.y = closerEnemy.position.y;
             currentBlast.GetComponent<Rigidbody>().AddForce(blastDirection * blastForce, ForceMode.Impulse);
             UnityEngine.Debug.Log("blast direction" + blastDirection);
+            AudioManager.Instance.PlaySFX(1);
         }
 
         if(spellType == 2)
@@ -394,6 +421,7 @@ public class Ayako : MonoBehaviour
             forceField.SetActive(true);
             forceFieldOn = true;
             shieldDuration = Time.time + 10f;
+            AudioManager.Instance.PlaySFX(3);
         }
         spellType = 0;
     }
@@ -415,7 +443,8 @@ public class Ayako : MonoBehaviour
     {
         if (maskOn && enemiesNear.Count == 0 && Time.time >= maskCD)
         {
-            mask.SetActive(false);
+            maskAnimator.SetTrigger("mask");
+            worldAnimator.SetTrigger("change");
             maskOn = false;
             world1Event.Raise();
             maskCD = Time.time + 15f;
@@ -424,11 +453,31 @@ public class Ayako : MonoBehaviour
         {
             if (!maskOn && enemiesNear.Count == 0 && Time.time >= maskCD)
             {
-                mask.SetActive(true);
+                maskAnimator.SetTrigger("mask");
+                worldAnimator.SetTrigger("change");
                 maskOn = true;
                 world2Event.Raise();
                 maskCD = Time.time + 15f;
             }
+        }
+    }
+
+    void OnTriggerEnter(Collider collision)
+    { 
+        if(collision.transform.CompareTag("EnemyDamager") && canBeHurt < Time.time)
+        {
+            UnityEngine.Debug.Log("collision con damager");
+            int damageReceived = (int)collision.gameObject.GetComponent<EnemyBullet>().PassDamage();
+            GetHurt(damageReceived);
+            canBeHurt = Time.time + 0.5f;
+        }
+
+        if (collision.transform.CompareTag("EnemyDamagerSpecial") && canBeHurt < Time.time)
+        {
+            UnityEngine.Debug.Log("collision con damager");
+            int damageReceived = (int)collision.gameObject.GetComponent<BossKatana>().PassDamage();
+            GetHurt(damageReceived);
+            canBeHurt = Time.time + 0.5f;
         }
     }
 }
