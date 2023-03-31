@@ -1,0 +1,17 @@
+﻿{
+    "f-ls-magespellcast-04": {
+        "Version": "1.10.1822.1",
+        "Scene": {
+            "Name": true,
+            "SupportShaderSelect": true
+        },
+        "Export Directory": "C:/RLConverterServices/RLConverter/TempData/Convert/59327a9a399d79a9/JIC96d845e484f1d06e5",
+        "Object": {
+            "f-ls-magespellcast-04": {
+                "Generation": "AccuRig",
+                "Physics": {},
+                "Meshes": {}
+            }
+        }
+    }
+}

@@ -1,0 +1,17 @@
+﻿{
+    "jump-to-land": {
+        "Version": "1.10.1822.1",
+        "Scene": {
+            "Name": true,
+            "SupportShaderSelect": true
+        },
+        "Export Directory": "C:/RLConverterServices/RLConverter/TempData/Convert/7d5d23639884ce19/JICb715045a2fb7891d8",
+        "Object": {
+            "jump-to-land": {
+                "Generation": "AccuRig",
+                "Physics": {},
+                "Meshes": {}
+            }
+        }
+    }
+}

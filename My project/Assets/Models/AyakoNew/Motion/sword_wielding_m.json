@@ -1,0 +1,17 @@
+﻿{
+    "sword_wielding_m": {
+        "Version": "1.10.1822.1",
+        "Scene": {
+            "Name": true,
+            "SupportShaderSelect": true
+        },
+        "Export Directory": "C:/RLConverterServices/RLConverter/TempData/Convert/d22efbd9d021bc8e/JICc7ce27a10bc0b5206",
+        "Object": {
+            "sword_wielding_m": {
+                "Generation": "AccuRig",
+                "Physics": {},
+                "Meshes": {}
+            }
+        }
+    }
+}

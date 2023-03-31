@@ -1,0 +1,17 @@
+﻿{
+    "run-start_166506": {
+        "Version": "1.10.1822.1",
+        "Scene": {
+            "Name": true,
+            "SupportShaderSelect": true
+        },
+        "Export Directory": "C:/RLConverterServices/RLConverter/TempData/Convert/2a23f01ad0b566af/JIC4d628507416ee92e8",
+        "Object": {
+            "run-start_166506": {
+                "Generation": "AccuRig",
+                "Physics": {},
+                "Meshes": {}
+            }
+        }
+    }
+}

@@ -1,0 +1,17 @@
+﻿{
+    "parkour-webster": {
+        "Version": "1.10.1822.1",
+        "Scene": {
+            "Name": true,
+            "SupportShaderSelect": true
+        },
+        "Export Directory": "C:/RLConverterServices/RLConverter/TempData/Convert/c28c12662269d343/JIC1327f59d0debd8f59",
+        "Object": {
+            "parkour-webster": {
+                "Generation": "AccuRig",
+                "Physics": {},
+                "Meshes": {}
+            }
+        }
+    }
+}
